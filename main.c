@@ -42,6 +42,8 @@ static uint16_t posx;
 static uint8_t posy;
 /* ID of card held by cursor. 0 if none */
 static uint8_t held_card;
+/* The location where the card was taken from */
+static uint8_t held_card_src_col;
 /* Pointer into screen memory where card drawing is taking place (avoids parameter passing) */
 uint8_t *card_draw_screenpos;
 /* Same as above for color ram */
@@ -127,6 +129,15 @@ extern void fastcall asm_draw_card_bottom(card_t card);
 #define draw_card_bottom(card) asm_draw_card_bottom(card)
 #endif
 
+static void draw_bg()
+{
+    card_draw_screenpos[0] = BG_CHAR;
+    card_draw_screenpos[1] = BG_CHAR;
+    card_draw_screenpos[2] = BG_CHAR;
+    card_draw_screenpos[3] = BG_CHAR;
+}
+
+/*
 static void draw_card(uint8_t x, uint8_t y, card_t card)
 {
     char *char_addr = &get_screen_mem()->mem[0];
@@ -148,6 +159,7 @@ static void draw_card(uint8_t x, uint8_t y, card_t card)
     draw_card_bottom(card);
     set_card_row_color(card_color(card));
 }
+*/
 
 static void draw_stack(uint8_t stack)
 {
@@ -182,6 +194,7 @@ static void draw_stack(uint8_t stack)
         } else {
             // Background
             set_card_row_color(COLOR_GREEN);
+            draw_bg();
         }
 
         card_draw_line_advance();
@@ -263,9 +276,27 @@ static void add_card(uint8_t stack, uint8_t held_card) {
     }
 }
 
-static uint8_t x_to_stack(uint16_t x) {
-    uint8_t stack = x/8/(CARD_WIDTH+1);
-    return stack > NUM_STACKS-1 ? NUM_STACKS-1 : stack;
+#define x_to_stack(x) (((x)/8/(CARD_WIDTH+1)) > NUM_STACKS-1 ? NUM_STACKS-1 : ((x)/8/(CARD_WIDTH+1)))
+
+static card_t take_card() {
+    uint8_t stack = x_to_stack(posx - SPRITE_XOFFSET);
+    card_t card = 0;
+    int i;
+
+    for (i=0; i<STACK_MAX_CARDS; i++) {
+        if (stacks[stack][i] == 0) {
+            break;
+        }
+        card = stacks[stack][i];
+    }
+
+    if (card) {
+        stacks[stack][i-1] = 0;
+        held_card_src_col = stack;
+        draw_stack(stack);
+    }
+
+    return card;
 }
 
 static void joy2_process(void)
@@ -292,12 +323,10 @@ static void joy2_process(void)
 
     if (button_changed()) {
         if (button_state) {
-            held_card = make_card(7, RED);
+            held_card = take_card();
             show_card_sprites();
         } else {
             hide_card_sprites();
-            //draw_card(posx / 8 - (SPRITE_XOFFSET / 8), posy / 8 - (SPRITE_YOFFSET / 8), held_card);
-
             stack = x_to_stack(posx - SPRITE_XOFFSET);
             add_card(stack, held_card);
             draw_stack(stack);
