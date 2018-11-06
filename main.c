@@ -64,7 +64,6 @@ static card_t freecells[NUM_CELLS];
 
 #define LOWER_STACKS_Y      (CARD_HEIGHT + 2)
 #define NUM_LOWER_STACKS    8
-#define UPPER_STACKS_Y      1
 
 #define STACK_MAX_ROWS  (SCREEN_HEIGHT - LOWER_STACKS_Y)
 
@@ -146,6 +145,15 @@ static void draw_card(uint8_t x, uint8_t y, card_t card)
 
     card_draw_set_offset(x, y);
 
+    if (card == 0) {
+        for (i = 0; i < CARD_HEIGHT; i++) {
+            set_card_row_color(COLOR_GREEN);
+            draw_bg();
+            card_draw_line_advance();
+        }
+        return;
+    }
+
     draw_card_top(card);
     set_card_row_color(card_color(card));
     card_draw_line_advance();
@@ -175,6 +183,11 @@ static void draw_stack(uint8_t stack)
     register uint8_t color;
     register uint8_t body = 0;
     static uint8_t body_count; // Not reentrant
+
+    if (stack > NUM_STACKS) {
+        draw_cell(stack - NUM_STACKS);
+        return;
+    }
 
     stack_cards = stacks[stack];
     card_draw_set_offset(stack * (CARD_WIDTH + 1), LOWER_STACKS_Y);
@@ -279,23 +292,81 @@ static bool button_state;
 static uint8_t button_state_frames = 255;
 #define button_changed()    (button_state_frames == 2) /* 2 frame debounce interval */
 
-static void add_card(uint8_t stack, uint8_t held_card) {
+static void drop_card(uint8_t stack, uint8_t held_card);
+
+static void drop_card_cell(uint8_t stack, uint8_t held_card)
+{
+    uint8_t cell = stack - NUM_STACKS;
+
+    if (cell > NUM_CELLS-1)
+        cell = NUM_CELLS-1;
+
+    if (freecells[cell]) {
+        /* Stack already occupied */
+        drop_card(held_card_src_col, held_card);
+    } else {
+        freecells[cell] = held_card;
+        draw_cell(cell);
+    }
+
+    held_card = 0;
+}
+
+static void drop_card(uint8_t stack, uint8_t held_card)
+{
     int i;
+
+    if (stack >= NUM_STACKS) {
+        drop_card_cell(stack, held_card);
+        return;
+    }
 
     for (i=0; i<STACK_MAX_CARDS; i++) {
         if (stacks[stack][i] == 0) {
             stacks[stack][i] = held_card;
+            draw_stack(stack);
             break;
         }
     }
+
+    held_card = 0;
 }
 
 #define x_to_stack(x) (((x)/8/(CARD_WIDTH+1)) > NUM_STACKS-1 ? NUM_STACKS-1 : ((x)/8/(CARD_WIDTH+1)))
 
-static card_t take_card() {
+static uint8_t pos_to_stack()
+{
     uint8_t stack = x_to_stack(posx - SPRITE_XOFFSET);
+    if (posy - SPRITE_YOFFSET < LOWER_STACKS_Y*8) {
+        /* Cursor is in the free cell area */
+        stack += NUM_STACKS;
+    }
+    return stack;
+}
+
+static card_t take_card_cell(uint8_t stack)
+{
+    uint8_t cell = stack - NUM_STACKS;
+    uint8_t card;
+
+    if (cell > NUM_CELLS-1)
+        cell = NUM_CELLS-1;
+
+    card = freecells[cell];
+    freecells[cell] = 0;
+    draw_cell(cell);
+    return card;
+}
+
+static card_t take_card()
+{
+    uint8_t stack = pos_to_stack();
     card_t card = 0;
     int i;
+
+    if (stack >= NUM_STACKS) {
+        return take_card_cell(stack);
+    }
 
     for (i=0; i<STACK_MAX_CARDS; i++) {
         if (stacks[stack][i] == 0) {
@@ -343,11 +414,8 @@ static void joy2_process(void)
         } else {
             hide_card_sprites();
             if (held_card) {
-                stack = x_to_stack(posx - SPRITE_XOFFSET);
-                add_card(stack, held_card);
-                draw_stack(stack);
-
-                held_card = 0;
+                stack = pos_to_stack();
+                drop_card(stack, held_card);
             }
         }
     }
