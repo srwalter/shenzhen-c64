@@ -220,28 +220,59 @@ static void draw_stack(uint8_t stack)
     }
 }
 
+#define DECK_SIZE 32
+
+#define rand() (SID.noise)
+
 static void cards(void)
 {
     int i;
+    int j = 0;
+    static uint8_t deck[DECK_SIZE];
+    uint8_t rnd1, rnd2, tmp;
 
-    stacks[0][0] = make_card(1, RED);
-    stacks[0][1] = make_card(8, GREEN);
-    stacks[0][2] = make_card(9, BLACK);
-    stacks[0][3] = make_card(5, BLACK);
-    stacks[0][4] = make_card(3, RED);
-    stacks[0][5] = make_card(4, RED);
-    stacks[3][0] = make_card(4, BLACK);
-    stacks[4][0] = make_card(0, GREEN);
-    for (i = 0; i < NUM_STACKS; i++) {
-        draw_stack(i);
+    for (i=0; i<11; i++) {
+        deck[i] = make_card(i+1, RED);
+    }
+    for (i=0; i<11; i++) {
+        deck[i+11] = make_card(i+1, GREEN);
+    }
+    /* No black flower */
+    for (i=0; i<10; i++) {
+        deck[i+22] = make_card(i+1, BLACK);
+    }
+    
+    /* Setup RNG */
+    SID.v3.freq = 0xffff;
+    /* Noise waveform, output disabled */
+    SID.v3.ctrl = 0x80;
+
+    /* Perform 100 swaps */
+    for (i=0; i<100; i++) {
+        rnd1 = rand() & 31;
+        rnd2 = rand() & 31;
+
+        tmp = deck[rnd1];
+        deck[rnd1] = deck[rnd2];
+        deck[rnd2] = tmp;
     }
 
-    freecells[0] = make_card(1, GREEN);
-    freecells[1] = make_card(2, RED);
-    freecells[2] = make_card(6, BLACK);
-
-    for (i = 0; i < NUM_CELLS; i++) {
-        draw_cell(i);
+    /* Deal them out */
+    for(i = 0; i<NUM_STACKS; i++) {
+        stacks[i][0] = deck[j++];
+        draw_stack(i);
+    }
+    for(i = 0; i<NUM_STACKS; i++) {
+        stacks[i][1] = deck[j++];
+        draw_stack(i);
+    }
+    for(i = 0; i<NUM_STACKS; i++) {
+        stacks[i][2] = deck[j++];
+        draw_stack(i);
+    }
+    for(i = 0; i<NUM_STACKS; i++) {
+        stacks[i][3] = deck[j++];
+        draw_stack(i);
     }
 }
 
