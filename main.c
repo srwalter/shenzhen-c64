@@ -54,6 +54,8 @@ uint8_t *card_draw_colorpos;
 #define NUM_STACKS      8
 #define STACK_MAX_CARDS 10
 static card_t stacks[NUM_STACKS][STACK_MAX_CARDS];
+#define NUM_CELLS       3
+static card_t freecells[NUM_CELLS];
 
 #define CARD_WIDTH  4
 #define CARD_HEIGHT 7
@@ -137,7 +139,6 @@ static void draw_bg()
     card_draw_screenpos[3] = BG_CHAR;
 }
 
-/*
 static void draw_card(uint8_t x, uint8_t y, card_t card)
 {
     char *char_addr = &get_screen_mem()->mem[0];
@@ -159,7 +160,12 @@ static void draw_card(uint8_t x, uint8_t y, card_t card)
     draw_card_bottom(card);
     set_card_row_color(card_color(card));
 }
-*/
+
+static void draw_cell(uint8_t cell)
+{
+    uint8_t x = cell * (CARD_WIDTH+1);
+    draw_card(x, 1, freecells[cell]);
+}
 
 static void draw_stack(uint8_t stack)
 {
@@ -215,6 +221,14 @@ static void cards(void)
     stacks[4][0] = make_card(0, GREEN);
     for (i = 0; i < NUM_STACKS; i++) {
         draw_stack(i);
+    }
+
+    freecells[0] = make_card(1, GREEN);
+    freecells[1] = make_card(2, RED);
+    freecells[2] = make_card(6, BLACK);
+
+    for (i = 0; i < NUM_CELLS; i++) {
+        draw_cell(i);
     }
 }
 
