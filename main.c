@@ -252,12 +252,31 @@ static bool button_state;
 static uint8_t button_state_frames = 255;
 #define button_changed()    (button_state_frames == 2) /* 2 frame debounce interval */
 
+static void add_card(uint8_t stack, uint8_t held_card) {
+    int i;
+
+    for (i=0; i<STACK_MAX_CARDS; i++) {
+        if (stacks[stack][i] == 0) {
+            stacks[stack][i] = held_card;
+            break;
+        }
+    }
+}
+
+static uint8_t x_to_stack(uint16_t x) {
+    uint8_t stack = x/8/(CARD_WIDTH+1);
+    return stack > NUM_STACKS-1 ? NUM_STACKS-1 : stack;
+}
+
 static void joy2_process(void)
 {
     uint16_t card_posx;
     uint8_t card_posy;
     uint8_t joyval = ~CIA1.pra;
+    uint8_t stack;
     bool cur_button_state;
+
+    VIC.bordercolor = COLOR_BLUE;
 
     /* Handle button debounce */
     cur_button_state = !!(joyval & JOY_BTN);
@@ -270,10 +289,6 @@ static void joy2_process(void)
     }
     button_state = cur_button_state;
 
-    /* Temporary performance test */
-    VIC.bordercolor = COLOR_BLUE;
-    draw_stack(0);
-    VIC.bordercolor = COLOR_RED;
 
     if (button_changed()) {
         if (button_state) {
@@ -281,7 +296,12 @@ static void joy2_process(void)
             show_card_sprites();
         } else {
             hide_card_sprites();
-            draw_card(posx / 8 - (SPRITE_XOFFSET / 8), posy / 8 - (SPRITE_YOFFSET / 8), held_card);
+            //draw_card(posx / 8 - (SPRITE_XOFFSET / 8), posy / 8 - (SPRITE_YOFFSET / 8), held_card);
+
+            stack = x_to_stack(posx - SPRITE_XOFFSET);
+            add_card(stack, held_card);
+            draw_stack(stack);
+
             held_card = 0;
         }
     }
@@ -329,6 +349,7 @@ static void joy2_process(void)
     VIC.spr_pos[SPRITE_ID_CARD_TOP].y = (uint8_t)card_posy;
     VIC.spr_pos[SPRITE_ID_CARD_BOTTOM].y = (uint8_t)(card_posy + 21);
     VIC.spr_pos[SPRITE_ID_MOUSE].y = (uint8_t)posy;
+    VIC.bordercolor = COLOR_RED;
 }
 
 /*
