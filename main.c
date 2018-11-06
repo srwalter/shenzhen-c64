@@ -324,14 +324,17 @@ static void joy2_process(void)
     if (button_changed()) {
         if (button_state) {
             held_card = take_card();
-            show_card_sprites();
+            if (held_card)
+                show_card_sprites();
         } else {
             hide_card_sprites();
-            stack = x_to_stack(posx - SPRITE_XOFFSET);
-            add_card(stack, held_card);
-            draw_stack(stack);
+            if (held_card) {
+                stack = x_to_stack(posx - SPRITE_XOFFSET);
+                add_card(stack, held_card);
+                draw_stack(stack);
 
-            held_card = 0;
+                held_card = 0;
+            }
         }
     }
 
