@@ -48,6 +48,8 @@ _CARD_TOP_LEFT:
     .incbin "images/7.bitmap"
     .incbin "images/8.bitmap"
     .incbin "images/9.bitmap" ; Really this is the same a 6 reversed
+    .incbin "images/dragon.bitmap"
+    .incbin "images/flower.bitmap"
     .export _CARD_IDX_BOTTOM_RIGHT = (_CARD_BOTTOM_RIGHT - _CHARMEM) / 8
     .export _CARD_BOTTOM_RIGHT
 _CARD_BOTTOM_RIGHT:
@@ -60,6 +62,8 @@ _CARD_BOTTOM_RIGHT:
     .incbin "images/7.reversed.bitmap"
     .incbin "images/8.reversed.bitmap"
     .incbin "images/9.reversed.bitmap"
+    .incbin "images/dragon.reversed.bitmap"
+    .incbin "images/flower.reversed.bitmap"
 
     .export _CARD_IDX_TOP = (CARD_TOP - _CHARMEM) / 8
 CARD_TOP:

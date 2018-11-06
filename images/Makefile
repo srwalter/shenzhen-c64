@@ -10,6 +10,8 @@ IMAGES := \
     7.bitmap \
     8.bitmap \
     9.bitmap \
+    dragon.bitmap \
+    flower.bitmap \
     1.reversed.bitmap \
     2.reversed.bitmap \
     3.reversed.bitmap \
@@ -19,6 +21,8 @@ IMAGES := \
     7.reversed.bitmap \
     8.reversed.bitmap \
     9.reversed.bitmap \
+    dragon.reversed.bitmap \
+    flower.reversed.bitmap \
     cardsprite_top.bitmap cardsprite_bottom.bitmap cardsprite_bg.bitmap \
     mouse_sprite.bitmap
 
