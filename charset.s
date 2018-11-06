@@ -60,21 +60,27 @@ _CARD_BOTTOM_RIGHT:
     .incbin "images/7.reversed.bitmap"
     .incbin "images/8.reversed.bitmap"
     .incbin "images/9.reversed.bitmap"
+
     .export _CARD_IDX_TOP = (CARD_TOP - _CHARMEM) / 8
 CARD_TOP:
     .byte   $ff, $00, $00, $00, $00, $00, $00, $00
+
     .export _CARD_IDX_RIGHT = (CARD_RIGHT - _CHARMEM) / 8
 CARD_RIGHT:
     .byte   $01, $01, $01, $01, $01, $01, $01, $01
+
     .export _CARD_IDX_BOTTOM = (CARD_BOTTOM - _CHARMEM) / 8
 CARD_BOTTOM:
     .byte   $00, $00, $00, $00, $00, $00, $00, $ff
+
     .export _CARD_IDX_BOTTOM_LEFT = (CARD_BOTTOM_LEFT - _CHARMEM) / 8
 CARD_BOTTOM_LEFT:
     .byte   $80, $80, $80, $80, $80, $80, $80, $7f
+
     .export _CARD_IDX_TOP_RIGHT = (CARD_TOP_RIGHT - _CHARMEM) / 8
 CARD_TOP_RIGHT:
     .byte   $fe, $01, $01, $01, $01, $01, $01, $01
+
     .export _CARD_IDX_LEFT = (CARD_LEFT - _CHARMEM) / 8
 CARD_LEFT:
     .byte   $80, $80, $80, $80, $80, $80, $80, $80
