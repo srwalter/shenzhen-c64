@@ -1,5 +1,6 @@
     .segment "CHARMEM"
     .export _CHARMEM
+    .align 1024
 _CHARMEM:
     .res    33*8 ; 33 chars from the ROM table will be copied here. 33rd is space (blank) character
     ; Numbers 1-10
