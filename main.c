@@ -45,6 +45,7 @@ static uint8_t posy;
 static uint8_t held_card;
 /* The location where the card was taken from */
 static uint8_t held_card_src_col;
+static bool game_over = false;
 /* Pointer into screen memory where card drawing is taking place (avoids parameter passing) */
 uint8_t *card_draw_screenpos;
 /* Same as above for color ram */
@@ -492,9 +493,11 @@ static void check_moves(void)
     bool redraw;
     bool rerun;
     int stack;
+    bool found_card;
 
 again:
     rerun = false;
+    found_card = false;
     for (i=0; i<NUM_STACKS; i++) {
         redraw = false;
 
@@ -507,6 +510,7 @@ again:
         if (j<0)
             continue;
 
+        found_card = true;
         card = stacks[i][j];
         if (card_number(card) == CARD_FLOWER) {
             stacks[i][j] = 0;
@@ -530,6 +534,7 @@ again:
         if (freecells[i] == 0)
             continue;
 
+        found_card = true;
         card = freecells[i];
         stack = color_to_stack(card);
         if (card_number(card) == card_number(done_stack[stack])+1) {
@@ -538,6 +543,11 @@ again:
             draw_cell(i);
             rerun = true;
         }
+    }
+
+    if (!found_card) {
+        game_over = true;
+        return;
     }
 
     if (rerun)
@@ -680,7 +690,7 @@ int main(void)
 #endif
     //printf("Screenreg 0x %x\n", (char)&SCREENREG);
     //printf("Press return to exit");
-    while (1) {
+    while (cbm_k_getin() != 'q' && !game_over) {
         while (VIC.rasterline < RASTER_MAX);
 
         VIC.bordercolor = COLOR_RED;
@@ -689,7 +699,6 @@ int main(void)
 
         while (VIC.rasterline >= RASTER_MAX);
     }
-    while (cbm_k_getin() != '1');
 
     restore_screen_addr();
 
