@@ -644,6 +644,23 @@ static void sprite_card_personify(card_t card)
     VIC.spr_color[SPRITE_ID_CARD_BOTTOM] = card_color(card);
 }
 
+static void move_card_sprite(uint16_t x, uint8_t y)
+{
+    VIC.spr_pos[SPRITE_ID_CARD_BG].x = (uint8_t)x;
+    VIC.spr_pos[SPRITE_ID_CARD_TOP].x = (uint8_t)x;
+    VIC.spr_pos[SPRITE_ID_CARD_BOTTOM].x = (uint8_t)x;
+
+    if (x >> 8) {
+        VIC.spr_hi_x |= SPRITE_CARD_MASK;
+    } else {
+        VIC.spr_hi_x &= ~SPRITE_CARD_MASK;
+    }
+
+    VIC.spr_pos[SPRITE_ID_CARD_BG].y = (uint8_t)y;
+    VIC.spr_pos[SPRITE_ID_CARD_TOP].y = (uint8_t)y;
+    VIC.spr_pos[SPRITE_ID_CARD_BOTTOM].y = (uint8_t)(y + 21);
+}
+
 static void joy2_process(void)
 {
     uint16_t card_posx;
@@ -708,23 +725,16 @@ static void joy2_process(void)
         posx = SPRITE_XMIN;
     }
     card_posx = posx - (SPRITE_CARD_WIDTH_PX / 2);
-    VIC.spr_pos[SPRITE_ID_CARD_BG].x = (uint8_t)card_posx;
-    VIC.spr_pos[SPRITE_ID_CARD_TOP].x = (uint8_t)card_posx;
-    VIC.spr_pos[SPRITE_ID_CARD_BOTTOM].x = (uint8_t)card_posx;
-    VIC.spr_pos[SPRITE_ID_MOUSE].x = (uint8_t)posx;
+    card_posy = posy - (SPRITE_CARD_HEIGHT_PX / 2);
+    move_card_sprite(card_posx, card_posy);
 
-    VIC.spr_hi_x &= ~(SPRITE_CARD_MASK | SPRITE_MOUSE_MASK);
-    if (card_posx >> 8) {
-        VIC.spr_hi_x |= SPRITE_CARD_MASK;
-    }
     if (posx >> 8) {
         VIC.spr_hi_x |= SPRITE_MOUSE_MASK;
+    } else {
+        VIC.spr_hi_x &= ~SPRITE_MOUSE_MASK;
     }
 
-    card_posy = posy - (SPRITE_CARD_HEIGHT_PX / 2);
-    VIC.spr_pos[SPRITE_ID_CARD_BG].y = (uint8_t)card_posy;
-    VIC.spr_pos[SPRITE_ID_CARD_TOP].y = (uint8_t)card_posy;
-    VIC.spr_pos[SPRITE_ID_CARD_BOTTOM].y = (uint8_t)(card_posy + 21);
+    VIC.spr_pos[SPRITE_ID_MOUSE].x = (uint8_t)posx;
     VIC.spr_pos[SPRITE_ID_MOUSE].y = (uint8_t)posy;
     VIC.bordercolor = COLOR_RED;
 }
