@@ -554,6 +554,29 @@ again:
         goto again;
 }
 
+/*
+ * Copy a character (8x8) bitmap to an 8x8 location in a sprite of width 24.
+ * Must be byte aligned.
+ */
+static void copy_char_to_sprite(uint8_t *c, uint8_t *sprite)
+{
+    int i;
+
+    for (i = 0; i < 8; i++) {
+        *sprite = c[i];
+        sprite += 3;
+    }
+}
+
+static void sprite_card_personify(card_t card)
+{
+    copy_char_to_sprite(CARD_TOP_LEFT + (card_number(card)-1) * 8, SPRITE_CARD_TOP);
+    /* Bottom right is row 26, col 2 */
+    copy_char_to_sprite(CARD_BOTTOM_RIGHT + (card_number(card)-1) * 8, SPRITE_CARD_BOTTOM + (26 - 21) * 3 + 2);
+    VIC.spr_color[SPRITE_ID_CARD_TOP] = card_color(card);
+    VIC.spr_color[SPRITE_ID_CARD_BOTTOM] = card_color(card);
+}
+
 static void joy2_process(void)
 {
     uint16_t card_posx;
@@ -579,8 +602,10 @@ static void joy2_process(void)
     if (button_changed()) {
         if (button_state) {
             held_card = take_card();
-            if (held_card)
+            if (held_card) {
+                sprite_card_personify(held_card);
                 show_card_sprites();
+            }
         } else {
             hide_card_sprites();
             if (held_card) {
@@ -637,28 +662,6 @@ static void joy2_process(void)
     VIC.bordercolor = COLOR_RED;
 }
 
-/*
- * Copy a character (8x8) bitmap to an 8x8 location in a sprite of width 24.
- * Must be byte aligned.
- */
-static void copy_char_to_sprite(uint8_t *c, uint8_t *sprite)
-{
-    int i;
-
-    for (i = 0; i < 8; i++) {
-        *sprite = c[i];
-        sprite += 3;
-    }
-}
-
-static void sprite_card_personify(uint8_t number)
-{
-
-    copy_char_to_sprite(CARD_TOP_LEFT + number * 8, SPRITE_CARD_TOP);
-    /* Bottom right is row 26, col 2 */
-    copy_char_to_sprite(CARD_BOTTOM_RIGHT + number * 8, SPRITE_CARD_BOTTOM + (26 - 21) * 3 + 2);
-}
-
 static void sprite_setup(void)
 {
     get_screen_mem()->sprite_ptr[SPRITE_ID_CARD_BG] = (uint8_t)&SPRITE_PTR_CARD_BG;
@@ -672,8 +675,6 @@ static void sprite_setup(void)
     VIC.spr_color[SPRITE_ID_MOUSE] = COLOR_BLACK;
     VIC.spr_ena = SPRITE_MOUSE_MASK; // Enable mouse
     joy2_process(); // Set up initial position
-
-    sprite_card_personify(7);
 }
 
 
