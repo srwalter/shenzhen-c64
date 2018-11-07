@@ -23,6 +23,7 @@ enum card_id {
     CARD9 = 9,
     CARD_DRAGON = 10,
     CARD_FLOWER = 11,
+    CARD_BACK = 12,
 };
 
 enum suit {
