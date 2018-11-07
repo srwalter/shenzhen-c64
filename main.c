@@ -288,8 +288,8 @@ static void cards(void)
 
     check_moves();
 
-    freecells[0] = make_card(CARD_BACK, BLACK);
-    draw_cell(0);
+    //freecells[0] = make_card(CARD_BACK, BLACK);
+    //draw_cell(0);
 }
 
 #define RASTER_MIN      51
@@ -385,10 +385,37 @@ static void drop_card_internal(uint8_t stack, uint8_t held_card)
 
 static void drop_card(uint8_t stack, uint8_t held_card)
 {
-    /* Can't move a dragon from stack to stack */
-    if (stack < NUM_STACKS && card_number(held_card) == CARD_DRAGON) {
-        drop_card_internal(held_card_src_col, held_card);
-        return;
+    int j;
+    card_t top_card;
+
+    if (stack < NUM_STACKS) {
+        /* Can't move a dragon from stack to stack */
+        if (card_number(held_card) == CARD_DRAGON) {
+            drop_card_internal(held_card_src_col, held_card);
+            return;
+        }
+
+        for (j=STACK_MAX_CARDS-1; j>=0; j--) {
+            if (stacks[stack][j])
+                break;
+        }
+
+        /* Check if stack is empty */
+        if (j >= 0) {
+            top_card = stacks[stack][j];
+
+            /* Can only stack cards by descending number */
+            if (card_number(held_card) != card_number(top_card)-1) {
+                drop_card_internal(held_card_src_col, held_card);
+                return;
+            }
+
+            /* Can't stack cards of the same color */
+            if (card_color(held_card) == card_color(top_card)-1) {
+                drop_card_internal(held_card_src_col, held_card);
+                return;
+            }
+        }
     }
 
     drop_card_internal(stack, held_card);
