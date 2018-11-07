@@ -57,6 +57,7 @@ uint8_t *card_draw_colorpos;
 static card_t stacks[NUM_STACKS][STACK_MAX_CARDS];
 #define NUM_CELLS       3
 static card_t freecells[NUM_CELLS];
+static card_t done_stack[4];
 
 #define CARD_WIDTH  4
 #define CARD_HEIGHT 7
@@ -170,6 +171,13 @@ static void draw_card(uint8_t x, uint8_t y, card_t card)
     set_card_row_color(card_color(card));
 }
 
+static void move_done_stack(uint8_t done, uint8_t card)
+{
+    uint8_t x = (done+4) * (CARD_WIDTH+1);
+    done_stack[done] = card;
+    draw_card(x, 1, card);
+}
+
 static void draw_cell(uint8_t cell)
 {
     uint8_t x = cell * (CARD_WIDTH+1);
@@ -220,6 +228,8 @@ static void draw_stack(uint8_t stack)
         card_draw_line_advance();
     }
 }
+
+static void check_moves(void);
 
 #define DECK_SIZE 32
 
@@ -275,6 +285,11 @@ static void cards(void)
         stacks[i][3] = deck[j++];
         draw_stack(i);
     }
+
+    check_moves();
+
+    freecells[0] = make_card(CARD_BACK, BLACK);
+    draw_cell(0);
 }
 
 #define RASTER_MIN      51
@@ -431,6 +446,63 @@ static card_t take_card()
     return card;
 }
 
+static int color_to_stack(uint8_t card) {
+    switch (card_color(card)) {
+        case COLOR_RED:
+            return 0;
+        case COLOR_GREEN:
+            return 1;
+        case COLOR_BLACK:
+            return 2;
+    }
+}
+
+/* Look for any flowers or cards that can move to done */
+static void check_moves(void)
+{
+    int i, j;
+    card_t card;
+    bool redraw;
+    bool rerun;
+    int stack;
+
+again:
+    rerun = false;
+    for (i=0; i<NUM_STACKS; i++) {
+        redraw = false;
+
+        for (j=STACK_MAX_CARDS-1; j>=0; j--) {
+            if (stacks[i][j])
+                break;
+        }
+
+        /* Check if stack is empty */
+        if (j<0)
+            continue;
+
+        card = stacks[i][j];
+        if (card_number(card) == CARD_FLOWER) {
+            stacks[i][j] = 0;
+            redraw = true;
+        } else {
+            stack = color_to_stack(card);
+            if (card_number(card) == card_number(done_stack[stack])+1) {
+                move_done_stack(stack, card);
+                stacks[i][j] = 0;
+                redraw = true;
+            }
+        }
+
+        if (redraw) {
+            draw_stack(i);
+            rerun = true;
+        }
+    }
+
+    if (rerun)
+        goto again;
+}
+
 static void joy2_process(void)
 {
     uint16_t card_posx;
@@ -463,6 +535,7 @@ static void joy2_process(void)
             if (held_card) {
                 stack = pos_to_stack();
                 drop_card(stack, held_card);
+                check_moves();
             }
         }
     }
