@@ -495,6 +495,34 @@ static int color_to_stack(uint8_t card) {
     }
 }
 
+static void remove_free_cards(card_t card)
+{
+    int i, j;
+
+    for (i=0; i<NUM_STACKS; i++) {
+        for (j=STACK_MAX_CARDS-1; j>=0; j--) {
+            if (stacks[i][j])
+                break;
+        }
+
+        /* Check if stack is empty */
+        if (j<0)
+            continue;
+
+        if (stacks[i][j] == card) {
+            stacks[i][j] = 0;
+            draw_stack(i);
+        }
+    }
+
+    for (i=0; i<NUM_CELLS; i++) {
+        if (freecells[i] == card) {
+            freecells[i] = 0;
+            draw_cell(i);
+        }
+    }
+}
+
 /* Look for any flowers or cards that can move to done */
 static void check_moves(void)
 {
@@ -504,8 +532,12 @@ static void check_moves(void)
     bool rerun;
     int stack;
     bool found_card;
+    uint8_t free_dragons[3];
 
 again:
+    free_dragons[0] = 0;
+    free_dragons[1] = 0;
+    free_dragons[2] = 0;
     rerun = false;
     found_card = false;
     for (i=0; i<NUM_STACKS; i++) {
@@ -527,6 +559,9 @@ again:
             redraw = true;
         } else {
             stack = color_to_stack(card);
+            if (card_number(card) == CARD_DRAGON)
+                free_dragons[stack]++;
+
             if (card_number(card) == card_number(done_stack[stack])+1) {
                 move_done_stack(stack, card);
                 stacks[i][j] = 0;
@@ -547,12 +582,34 @@ again:
         found_card = true;
         card = freecells[i];
         stack = color_to_stack(card);
+        if (card_number(card) == CARD_DRAGON)
+            free_dragons[stack]++;
         if (card_number(card) == card_number(done_stack[stack])+1) {
             move_done_stack(stack, card);
             freecells[i] = 0;
             draw_cell(i);
             rerun = true;
         }
+    }
+
+    for (i=0; i<3; i++) {
+        card = done_stack[i];
+        stack = color_to_stack(card);
+        if (card_number(card) == CARD_DRAGON)
+            free_dragons[stack]++;
+    }
+
+    if (free_dragons[0] == 3) {
+        remove_free_cards(make_card(CARD_DRAGON, RED));
+        rerun = true;
+    }
+    if (free_dragons[1] == 3) {
+        remove_free_cards(make_card(CARD_DRAGON, GREEN));
+        rerun = true;
+    }
+    if (free_dragons[2] == 3) {
+        remove_free_cards(make_card(CARD_DRAGON, BLACK));
+        rerun = true;
     }
 
     if (!found_card) {
