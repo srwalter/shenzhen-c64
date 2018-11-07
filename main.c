@@ -526,6 +526,20 @@ again:
         }
     }
 
+    for (i=0; i<NUM_CELLS; i++) {
+        if (freecells[i] == 0)
+            continue;
+
+        card = freecells[i];
+        stack = color_to_stack(card);
+        if (card_number(card) == card_number(done_stack[stack])+1) {
+            move_done_stack(stack, card);
+            freecells[i] = 0;
+            draw_cell(i);
+            rerun = true;
+        }
+    }
+
     if (rerun)
         goto again;
 }
