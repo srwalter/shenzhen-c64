@@ -324,7 +324,7 @@ static bool button_state;
 static uint8_t button_state_frames = 255;
 #define button_changed()    (button_state_frames == 2) /* 2 frame debounce interval */
 
-static void drop_card(uint8_t stack, uint8_t held_card);
+static void drop_card_internal(uint8_t stack, uint8_t held_card);
 
 static void drop_card_cell(uint8_t stack, uint8_t held_card)
 {
@@ -335,7 +335,7 @@ static void drop_card_cell(uint8_t stack, uint8_t held_card)
 
     if (freecells[cell]) {
         /* Stack already occupied */
-        drop_card(held_card_src_col, held_card);
+        drop_card_internal(held_card_src_col, held_card);
     } else {
         freecells[cell] = held_card;
         draw_cell(cell);
@@ -344,7 +344,7 @@ static void drop_card_cell(uint8_t stack, uint8_t held_card)
     held_card = 0;
 }
 
-static void drop_card(uint8_t stack, uint8_t held_card)
+static void drop_card_internal(uint8_t stack, uint8_t held_card)
 {
     int i;
 
@@ -361,7 +361,22 @@ static void drop_card(uint8_t stack, uint8_t held_card)
         }
     }
 
+    if (i==STACK_MAX_CARDS) {
+        drop_card_internal(held_card_src_col, held_card);
+    }
+
     held_card = 0;
+}
+
+static void drop_card(uint8_t stack, uint8_t held_card)
+{
+    /* Can't move a dragon from stack to stack */
+    if (stack < NUM_STACKS && card_number(held_card) == CARD_DRAGON) {
+        drop_card_internal(held_card_src_col, held_card);
+        return;
+    }
+
+    drop_card_internal(stack, held_card);
 }
 
 #define x_to_stack(x) (((x)/8/(CARD_WIDTH+1)) > NUM_STACKS-1 ? NUM_STACKS-1 : ((x)/8/(CARD_WIDTH+1)))
