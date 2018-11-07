@@ -232,7 +232,7 @@ static void draw_stack(uint8_t stack)
 
 static void check_moves(void);
 
-#define DECK_SIZE 32
+#define DECK_SIZE 38
 
 #define rand() (SID.noise)
 
@@ -244,15 +244,23 @@ static void cards(void)
     uint8_t rnd1, rnd2, tmp;
 
     for (i=0; i<11; i++) {
-        deck[i] = make_card(i+1, RED);
+        deck[j++] = make_card(i+1, RED);
     }
     for (i=0; i<11; i++) {
-        deck[i+11] = make_card(i+1, GREEN);
+        deck[j++] = make_card(i+1, GREEN);
     }
     /* No black flower */
     for (i=0; i<10; i++) {
-        deck[i+22] = make_card(i+1, BLACK);
+        deck[j++] = make_card(i+1, BLACK);
     }
+
+    /* There are actually 3 each of the dragons, so throw in the extras */
+    deck[j++] = make_card(CARD_DRAGON, RED);
+    deck[j++] = make_card(CARD_DRAGON, RED);
+    deck[j++] = make_card(CARD_DRAGON, GREEN);
+    deck[j++] = make_card(CARD_DRAGON, GREEN);
+    deck[j++] = make_card(CARD_DRAGON, BLACK);
+    deck[j++] = make_card(CARD_DRAGON, BLACK);
     
     /* Setup RNG */
     SID.v3.freq = 0xffff;
@@ -261,8 +269,8 @@ static void cards(void)
 
     /* Perform 100 swaps */
     for (i=0; i<100; i++) {
-        rnd1 = rand() & 31;
-        rnd2 = rand() & 31;
+        rnd1 = rand() % DECK_SIZE;
+        rnd2 = rand() % DECK_SIZE;
 
         tmp = deck[rnd1];
         deck[rnd1] = deck[rnd2];
@@ -270,6 +278,7 @@ static void cards(void)
     }
 
     /* Deal them out */
+    j=0;
     for(i = 0; i<NUM_STACKS; i++) {
         stacks[i][0] = deck[j++];
         draw_stack(i);
@@ -286,11 +295,12 @@ static void cards(void)
         stacks[i][3] = deck[j++];
         draw_stack(i);
     }
+    for(i = 0; i<6; i++) {
+        stacks[i][4] = deck[j++];
+        draw_stack(i);
+    }
 
     check_moves();
-
-    //freecells[0] = make_card(CARD_BACK, BLACK);
-    //draw_cell(0);
 }
 
 #define RASTER_MIN      51
