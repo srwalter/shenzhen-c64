@@ -632,10 +632,9 @@ again:
             redraw = true;
         } else {
             stack = color_to_stack(card);
-            if (card_number(card) == CARD_DRAGON)
+            if (card_number(card) == CARD_DRAGON) {
                 free_dragons[stack]++;
-
-            if (card_number(card) == card_number(done_stack[stack])+1) {
+            } else if (card_number(card) == card_number(done_stack[stack])+1) {
                 stacks[i][j] = 0;
                 draw_stack(i);
                 animate_movement(card, i, j, stack);
