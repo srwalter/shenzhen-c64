@@ -433,6 +433,8 @@ static void drop_card(uint8_t stack, uint8_t held_card)
 }
 
 #define x_to_stack(x) (((x)/8/(CARD_WIDTH+1)) > NUM_STACKS-1 ? NUM_STACKS-1 : ((x)/8/(CARD_WIDTH+1)))
+#define stack_to_x(stack) ((uint16_t)(stack)*8*(CARD_WIDTH+1) + SPRITE_CARD_WIDTH_PX)
+#define row_to_y(row) ((row)*8 + LOWER_STACKS_Y*8 + SPRITE_CARD_HEIGHT_PX*2)
 
 static uint8_t pos_to_stack()
 {
@@ -495,6 +497,8 @@ static int color_to_stack(uint8_t card) {
     }
 }
 
+static void animate_movement(card_t card, uint8_t src_stack, uint8_t row, uint8_t dest);
+
 static void remove_free_cards(card_t card)
 {
     int i, j;
@@ -512,6 +516,8 @@ static void remove_free_cards(card_t card)
         if (stacks[i][j] == card) {
             stacks[i][j] = 0;
             draw_stack(i);
+            animate_movement(card, i, j, 3);
+            move_done_stack(3, make_card(CARD_BACK, BLACK));
         }
     }
 
@@ -519,8 +525,63 @@ static void remove_free_cards(card_t card)
         if (freecells[i] == card) {
             freecells[i] = 0;
             draw_cell(i);
+            animate_movement(card, i, 0, 3);
+            move_done_stack(3, make_card(CARD_BACK, BLACK));
         }
     }
+}
+
+static void sprite_card_personify(card_t card);
+static void move_card_sprite(uint16_t x, uint8_t y);
+
+/* Pixels per frame */
+#define ANIMATION_SPEED 1
+
+static void animate_movement(card_t card, uint8_t src_stack, uint8_t row, uint8_t dest)
+{
+    uint16_t src_x;
+    uint8_t src_y;
+    uint16_t dest_x = stack_to_x(dest+4);
+    const uint8_t dest_y = SPRITE_CARD_HEIGHT_PX*2;
+    int8_t dir_x;
+    int8_t dir_y;
+
+    if (src_stack < NUM_STACKS) {
+        src_x = stack_to_x(src_stack);
+        src_y = row_to_y(row);
+    } else {
+        src_x = stack_to_x(src_stack - NUM_STACKS);
+        src_y = 0;
+    }
+
+    if (src_x < dest_x) {
+        dir_x = 1;
+    } else {
+        dir_x = -1;
+    }
+
+    if (src_y < dest_y) {
+        dir_y = 1;
+    } else {
+        dir_y = -1;
+    }
+
+    sprite_card_personify(card);
+    show_card_sprites();
+
+    while (src_x != dest_x || src_y != dest_y) {
+        while (VIC.rasterline < RASTER_MAX);
+
+        move_card_sprite(src_x, src_y);
+        if (src_x != dest_x)
+            src_x += dir_x*ANIMATION_SPEED;
+        if (src_y != dest_y)
+            src_y += dir_y*ANIMATION_SPEED;
+
+        while (VIC.rasterline >= RASTER_MAX);
+    }
+
+    hide_card_sprites();
 }
 
 /* Look for any flowers or cards that can move to done */
@@ -556,6 +617,9 @@ again:
         card = stacks[i][j];
         if (card_number(card) == CARD_FLOWER) {
             stacks[i][j] = 0;
+            draw_stack(i);
+            animate_movement(card, i, j, 3);
+            move_done_stack(3, make_card(CARD_BACK, BLACK));
             redraw = true;
         } else {
             stack = color_to_stack(card);
@@ -563,8 +627,10 @@ again:
                 free_dragons[stack]++;
 
             if (card_number(card) == card_number(done_stack[stack])+1) {
-                move_done_stack(stack, card);
                 stacks[i][j] = 0;
+                draw_stack(i);
+                animate_movement(card, i, j, stack);
+                move_done_stack(stack, card);
                 redraw = true;
             }
         }
@@ -585,9 +651,10 @@ again:
         if (card_number(card) == CARD_DRAGON)
             free_dragons[stack]++;
         if (card_number(card) == card_number(done_stack[stack])+1) {
-            move_done_stack(stack, card);
             freecells[i] = 0;
             draw_cell(i);
+            animate_movement(card, NUM_STACKS+i, 0, stack);
+            move_done_stack(stack, card);
             rerun = true;
         }
     }
