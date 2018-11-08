@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
 #include <cbm.h>
@@ -535,7 +536,7 @@ static void sprite_card_personify(card_t card);
 static void move_card_sprite(uint16_t x, uint8_t y);
 
 /* Pixels per frame */
-#define ANIMATION_SPEED 1
+#define ANIMATION_SPEED 4
 
 static void animate_movement(card_t card, uint8_t src_stack, uint8_t row, uint8_t dest)
 {
@@ -573,10 +574,18 @@ static void animate_movement(card_t card, uint8_t src_stack, uint8_t row, uint8_
         while (VIC.rasterline < RASTER_MAX);
 
         move_card_sprite(src_x, src_y);
-        if (src_x != dest_x)
-            src_x += dir_x*ANIMATION_SPEED;
-        if (src_y != dest_y)
-            src_y += dir_y*ANIMATION_SPEED;
+        if (src_x != dest_x) {
+            if (abs(src_x-dest_x) < ANIMATION_SPEED)
+                src_x = dest_x;
+            else
+                src_x += dir_x*ANIMATION_SPEED;
+        }
+        if (src_y != dest_y) {
+            if (abs(src_y-dest_y) < ANIMATION_SPEED)
+                src_y = dest_y;
+            else
+                src_y += dir_y*ANIMATION_SPEED;
+        }
 
         while (VIC.rasterline >= RASTER_MAX);
     }
@@ -824,8 +833,8 @@ static void sprite_setup(void)
 
 int main(void)
 {
-    printf("Hello world port: 0x%x\n", *(unsigned char *)(0x01));
-    printf("Screen at 0x%x\n", (uint16_t)get_screen_mem());
+    printf("hello world port: 0x%x\n", *(unsigned char *)(0x01));
+    printf("screen at 0x%x\n", (uint16_t)get_screen_mem());
 #if 1
     sprite_setup();
     copy_character_rom();
