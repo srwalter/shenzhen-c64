@@ -423,7 +423,7 @@ static void drop_card(uint8_t stack, uint8_t held_card)
             }
 
             /* Can't stack cards of the same color */
-            if (card_color(held_card) == card_color(top_card)-1) {
+            if (card_color(held_card) == card_color(top_card)) {
                 drop_card_internal(held_card_src_col, held_card);
                 return;
             }
