@@ -845,7 +845,13 @@ int main(void)
         while (VIC.rasterline >= RASTER_MAX);
     }
 
+    VIC.spr_ena = 0; // Hide sprites
     restore_screen_addr();
+    /* Turn off Extended Background Color Mode */
+    VIC.ctrl1 &= ~(1 << 6);
+    memset(COLOR_RAM, COLOR_LIGHTBLUE, SCREEN_SIZE);
+    /* Turn off lower-case mode */
+    VIC.addr &= ~(1 << 1);
 
     return 0;
 }

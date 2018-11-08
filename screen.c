@@ -37,6 +37,7 @@ void set_screen_addr(void)
 
 void restore_screen_addr(void)
 {
+    VIC.bgcolor0 = COLOR_BLUE;
     VIC.addr = old_screenreg;
 }
 
