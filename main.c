@@ -401,19 +401,22 @@ static void drop_card(uint8_t stack, uint8_t held_card)
     card_t top_card;
 
     if (stack < NUM_STACKS) {
-        /* Can't move a dragon from stack to stack */
-        if (card_number(held_card) == CARD_DRAGON) {
-            drop_card_internal(held_card_src_col, held_card);
-            return;
-        }
-
         for (j=STACK_MAX_CARDS-1; j>=0; j--) {
             if (stacks[stack][j])
                 break;
         }
 
-        /* Check if stack is empty */
-        if (j >= 0) {
+        if (j < 0) {
+            /* Can always move onto an empty stack */
+            drop_card_internal(stack, held_card);
+            return;
+        } else {
+            /* Can't move a dragon from stack to stack */
+            if (card_number(held_card) == CARD_DRAGON) {
+                drop_card_internal(held_card_src_col, held_card);
+                return;
+            }
+
             top_card = stacks[stack][j];
 
             /* Can only stack cards by descending number */
